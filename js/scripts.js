@@ -7,6 +7,10 @@ const burgerMenu = document.querySelector('.hamburger');
 const tvShowsList = document.querySelector('.tv-shows__list');
 const modal = document.querySelector('.modal');
 
+const IMG_URL = 'https://image.tmdb.org/t/p/w185_and_h278_bestv2';
+const NO_IMG = 'img/no-poster.jpg';
+const API_KEY = '6359c138195c0ec6f99c45731e05330b';
+
 // cards class
 
 
@@ -17,26 +21,36 @@ const DBRequest = class {
             return res.json();
         }
     }
-    getTestData = async () => await this.getData('test.json');
+    getTestData = () => this.getData('test.json');
 }
 
 const renderCard = res => {
     res.results.map(item => {
+        console.log(item);
+        const { backdrop_path: backdrop,
+                name: title,
+                poster_path: poster,
+                vote_average: vote} = item;
+
+        const posterIMG = poster ? IMG_URL+poster : NO_IMG;
+        const backdropIMG = backdrop ? IMG_URL+backdrop : NO_IMG;
+                
+                
         const card = `
             <li class="tv-shows__item">
                         <a href="#" class="tv-card">
-                            <span class="tv-card__vote">7.1</span>
+                            <span class="tv-card__vote">${vote}</span>
                             <img class="tv-card__img"
-                                src="https://image.tmdb.org/t/p/w185_and_h278_bestv2/2lsuke69bRdyB1sxtKmavtwkc35.jpg"
-                                data-backdrop="https://image.tmdb.org/t/p/w185_and_h278_bestv2/pxkeqSHfTkefKz0y5naAX1u9cDw.jpg"
-                                alt="Звёздные войны. Войны клонов">
-                            <h4 class="tv-card__head">Звёздные войны. Войны клонов</h4>
+                                src="${posterIMG}"
+                                data-backdrop="${backdropIMG}"
+                                alt="${title}">
+                            <h4 class="tv-card__head">${title}</h4>
                         </a>
                     </li>
         `;
-        console.log(card);
         
-        tvShowsList.append = card;
+        tvShowsList.insertAdjacentHTML('beforeend', card);
+        // tvShowsList.insertAdjacentElement('afterbegin', card);
         
     });
 };
