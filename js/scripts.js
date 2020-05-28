@@ -1,4 +1,7 @@
 
+const IMG_URL = 'https://image.tmdb.org/t/p/w185_and_h278_bestv2';
+const NO_IMG = 'img/no-poster.jpg';
+
 
 // menu items
 
@@ -6,15 +9,34 @@ const leftMenu = document.querySelector('.left-menu');
 const burgerMenu = document.querySelector('.hamburger'); 
 const tvShowsList = document.querySelector('.tv-shows__list');
 const modal = document.querySelector('.modal');
+const tvShows = document.querySelector('.tv-shows');
 
-const IMG_URL = 'https://image.tmdb.org/t/p/w185_and_h278_bestv2';
-const NO_IMG = 'img/no-poster.jpg';
-const API_KEY = '6359c138195c0ec6f99c45731e05330b';
+const tvCardImg = document.querySelector('.tv-card__img');
+const modalTitle = document.querySelector('.modal__title');
+const genresList = document.querySelector('.genres-list');
+const rating = document.querySelector('.rating');
+const description = document.querySelector('.description');
+const modalLink = document.querySelector('.modal__link');
+
+// search form and input
+const searchForm = document.querySelector('.search__form');
+const searchFormInput = document.querySelector('.search__form-input');
+
+// add loading div
+const loading = document.createElement('div');
+loading.className = 'loading';
+
+
+
 
 // cards class
 
 
 const DBRequest = class {
+    constructor(){
+        this.API_KEY = '6359c138195c0ec6f99c45731e05330b';
+        this.SITE_URL = 'https://api.themoviedb.org/3';
+    }
     getData = async (url) => {
         const res = await fetch(url);
         if (res.ok) {
@@ -22,24 +44,30 @@ const DBRequest = class {
         }
     }
     getTestData = () => this.getData('test.json');
+    getTestCard = () => this.getData('card.json');
+
+    getSearchResult = query => this.getData(`${this.SITE_URL}/search/tv?api_key=${this.API_KEY}&language=ru-RU&query=${query}&page=1`);
+    getTVShow = id => this.getData(`${this.SITE_URL}/tv/${id}?api_key=${this.API_KEY}&language=ru-RU`);
 }
 
+
 const renderCard = res => {
+    tvShowsList.innerHTML = '';
     res.results.map(item => {
-        console.log(item);
         const { backdrop_path: backdrop,
                 name: title,
                 poster_path: poster,
-                vote_average: vote} = item;
+                vote_average: vote,
+                id} = item;
 
         const posterIMG = poster ? IMG_URL+poster : NO_IMG;
         const backdropIMG = backdrop ? IMG_URL+backdrop : NO_IMG;
-                
+        const voteItem = vote ? `<span class="tv-card__vote">${vote}</span>` : '';
                 
         const card = `
-            <li class="tv-shows__item">
-                        <a href="#" class="tv-card">
-                            <span class="tv-card__vote">${vote}</span>
+            <li class="tv-shows__item" id=${id}>
+                        <a href="#" class="tv-card" data-id=${id}>
+                            ${voteItem}
                             <img class="tv-card__img"
                                 src="${posterIMG}"
                                 data-backdrop="${backdropIMG}"
@@ -49,14 +77,12 @@ const renderCard = res => {
                     </li>
         `;
         
+        loading.remove();
         tvShowsList.insertAdjacentHTML('beforeend', card);
         // tvShowsList.insertAdjacentElement('afterbegin', card);
         
-    });
+    }).join('');
 };
-
-
-new DBRequest().getTestData().then(renderCard);
 
 
 // open/close burger menu
@@ -78,6 +104,7 @@ function handleClickOutsideMenu({ target } ) {
 // open subMenu
 
 function handleSubMenu( {target} ){
+    event.preventDefault();
     const dropdown = target.closest('.dropdown');
     if (dropdown) {
         dropdown.classList.toggle('active');
@@ -91,9 +118,35 @@ function handleSubMenu( {target} ){
 
 function openModal( event ) {
     event.preventDefault(); // stop scrolling to top
-    if (event.target.closest('.tv-card')){
-        document.body.style.overflow = 'hidden'; // removing window scroll
-        modal.classList.remove('hide');
+    const card = event.target.closest('.tv-card');
+    console.log(card);
+    
+    if (card){
+        new DBRequest()
+            .getTVShow(card.dataset.id)
+            .then( ( { poster_path: posterPath, 
+                        name: title, 
+                        genres, 
+                        vote_average: vote, 
+                        overview,
+                        homepage} ) => {
+                
+                tvCardImg.src = IMG_URL + posterPath;
+                tvCardImg.alt = title;
+                modalTitle.textContent = title;
+                genresList.innerHTML = genres.map(item => `
+                                <li>${item.name}</li> 
+                            `).join('');
+                rating.textContent = vote;
+                description.textContent = overview;
+                modalLink.href = homepage;
+            })
+            .then( () => {
+                    document.body.style.overflow = 'hidden'; // removing window scroll
+                    modal.classList.remove('hide');
+                }
+            );
+
     }
 }
 
@@ -119,6 +172,20 @@ function changeImage( {target} ) {
     }
 }
 
+function handleSearchQuery(event) {
+    event.preventDefault();
+    const value = searchFormInput.value.trim();
+    searchFormInput.value = '';
+
+    if(value) {
+        tvShows.append(loading);
+        new DBRequest()
+            .getSearchResult(value)
+            .then(renderCard);
+    }
+    
+}
+
 
 
 burgerMenu.addEventListener('click', handleBurgerMenu);
@@ -133,3 +200,5 @@ modal.addEventListener('click', closeModal);
 
 tvShowsList.addEventListener('mouseover', changeImage);
 tvShowsList.addEventListener('mouseout', changeImage);
+
+searchForm.addEventListener('submit', handleSearchQuery);
