@@ -683,6 +683,20 @@ main {
 
 }
 
+/*  pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+.pagination li {
+    margin: 0 5px;
+}
+.pagination li a {
+    display: inline-block;
+    padding: 0 5px;
+}
+
 @media (max-width: 1024px) {
     .container {
         padding: 0 60px;
