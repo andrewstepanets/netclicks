@@ -30,6 +30,11 @@ const tvShowsHead = document.querySelector('.tv-shows__head');
 // pagination
 const pagination = document.querySelector('.pagination');
 
+// add trailer
+
+const trailer = document.querySelector('#trailer');
+const headTrailer = document.querySelector('#headTrailer');
+
 
 // add loading div
 const loading = document.createElement('div');
@@ -76,6 +81,8 @@ const DBRequest = class {
     getAiringToday = () => this.getData(`${this.SITE_URL}/tv/airing_today?api_key=${this.API_KEY}&language=ru-RU`);
     
     getOnTheAir = () => this.getData(`${this.SITE_URL}/tv/on_the_air?api_key=${this.API_KEY}&language=ru-RU`);
+
+    getVideo = id => this.getData(`${this.SITE_URL}/tv/${id}/videos?api_key=${this.API_KEY}&language=ru-RU`);
     
 }
 
@@ -218,8 +225,10 @@ function openModal( event ) {
                         genres, 
                         vote_average: vote, 
                         overview,
-                        homepage} ) => {
-                
+                        homepage,
+                        id
+                    } ) => {
+                        
                         if(posterPath) {
                             tvCardImg.src = IMG_URL + posterPath;
                             
@@ -234,6 +243,25 @@ function openModal( event ) {
                             rating.textContent = vote;
                             description.textContent = overview;
                             modalLink.href = homepage;
+                            
+                            return id;
+            })
+            .then(dbReguest.getVideo)
+            .then( ({results}) => {
+                headTrailer.classList.add('hide');
+                trailer.textContent = '';
+                results.length && results.map(item => {
+                                headTrailer.classList.remove('hide');
+                                const trailerItem = document.createElement('li');
+                                trailerItem.innerHTML = ` 
+                                    <iframe width="400" height="225" 
+                                        src="https://www.youtube.com/embed/${item.key}" 
+                                        frameborder="0"
+                                        allowfullscreen>
+                                    </iframe>
+                                    <h4>${item.name}</h4>`;
+                                trailer.append(trailerItem);
+                            })
             })
             .then( () => {
                     document.body.style.overflow = 'hidden'; // removing window scroll
